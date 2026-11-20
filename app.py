@@ -7,10 +7,10 @@ JOGO_HTML = """
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Aventura do Maguinho</title>
   <style>
-    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
     body {
       margin: 0;
       background: #120d1d;
@@ -21,44 +21,88 @@ JOGO_HTML = """
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      padding: 10px;
+      padding: 8px;
+      touch-action: manipulation;
     }
-    h2 { margin: 0 0 8px 0; font-size: 18px; color: #d8b4fe; }
+    .topo {
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    h2 { margin: 0; font-size: 16px; color: #d8b4fe; }
     canvas {
       background: linear-gradient(#1b1230, #2b1947);
       border: 3px solid #6b46c1;
       border-radius: 10px;
       width: 100%;
-      max-width: 640px;
+      max-width: 680px;
       height: auto;
       display: block;
     }
     .controles {
       margin-top: 12px;
       width: 100%;
-      max-width: 640px;
+      max-width: 680px;
       display: flex;
       justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
     }
-    .grupo { display: flex; gap: 8px; }
+    .grupo {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .grupo-acao {
+      flex-direction: row-reverse;
+    }
     button {
       background: #4c1d95;
       color: white;
       border: 2px solid #8b5cf6;
-      border-radius: 10px;
-      padding: 12px 14px;
-      font-size: 15px;
+      border-radius: 12px;
+      padding: 14px 16px;
+      min-width: 56px;
+      min-height: 54px;
+      font-size: 16px;
       font-weight: bold;
       cursor: pointer;
+      touch-action: none;
     }
-    button:active { background: #7c3aed; }
+    #btnReiniciar {
+      padding: 6px 10px;
+      min-width: auto;
+      min-height: auto;
+      font-size: 12px;
+      border-radius: 8px;
+      background: #2e1065;
+    }
+    button:active { background: #7c3aed; transform: scale(0.97); }
     .dica { margin-top: 8px; font-size: 12px; color: #a78bfa; text-align: center; }
+
+    @media (max-width: 600px) {
+      h2 { font-size: 14px; }
+      button {
+        padding: 15px 13px;
+        min-width: 52px;
+        min-height: 56px;
+        font-size: 15px;
+      }
+      #btnAgachar { padding: 15px 10px; font-size: 13px; }
+      #btnPular, #btnMagia { padding: 15px 12px; font-size: 14px; }
+      .dica { display: none; }
+    }
   </style>
 </head>
 <body>
-  <h2 id="tituloFase">Aventura do Maguinho — Fase 1: Floresta Dark</h2>
+  <div class="topo">
+    <h2 id="tituloFase">Aventura do Maguinho — Fase 1: Floresta Dark</h2>
+    <button id="btnReiniciar">↻ Reiniciar</button>
+  </div>
   <canvas id="tela" width="640" height="320"></canvas>
 
   <div class="controles">
@@ -67,10 +111,9 @@ JOGO_HTML = """
       <button id="btnDir">▶</button>
       <button id="btnAgachar">▼ Agachar</button>
     </div>
-    <div class="grupo">
-      <button id="btnPular">▲ Pular</button>
+    <div class="grupo grupo-acao">
       <button id="btnMagia">✦ Magia</button>
-      <button id="btnReiniciar">↻ Reiniciar</button>
+      <button id="btnPular">▲ Pular</button>
     </div>
   </div>
 
@@ -315,16 +358,29 @@ JOGO_HTML = """
       btn.addEventListener("mousedown", ativar);
       btn.addEventListener("mouseup", desativar);
       btn.addEventListener("mouseleave", desativar);
-      btn.addEventListener("touchstart", ativar);
-      btn.addEventListener("touchend", desativar);
+      btn.addEventListener("touchstart", ativar, { passive: false });
+      btn.addEventListener("touchend", desativar, { passive: false });
+      btn.addEventListener("touchcancel", desativar, { passive: false });
+    }
+
+    function ligarBotaoToque(id, acao) {
+      const btn = document.getElementById(id);
+      btn.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        acao();
+      }, { passive: false });
+      btn.addEventListener("click", (e) => {
+        if (e.detail === 0) return;
+        acao();
+      });
     }
 
     ligarBotaoSegurar("btnEsq", "esq");
     ligarBotaoSegurar("btnDir", "dir");
     ligarBotaoSegurar("btnAgachar", "baixo");
 
-    document.getElementById("btnPular").addEventListener("click", pular);
-    document.getElementById("btnMagia").addEventListener("click", lancarMagia);
+    ligarBotaoToque("btnPular", pular);
+    ligarBotaoToque("btnMagia", lancarMagia);
     document.getElementById("btnReiniciar").addEventListener("click", acaoReiniciar);
 
     function atualizar() {
